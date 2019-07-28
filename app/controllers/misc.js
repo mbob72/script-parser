@@ -120,6 +120,6 @@ exports.schema = async function (ctx) {
   let res2
   try {
     res2 = getStructure(res)
-    ctx.body = res2
+    ctx.body = JSON.stringify(res2)
   } catch(e) { ctx.body = e.toString()}
 }

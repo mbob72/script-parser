@@ -54,19 +54,33 @@ const getStructure = (dom) => {
     return widgetParsers[meta[0]](node)
   }
 
+  const selectClosestChildren = (parent, selector, ifSingle) => {
+    if (ifSingle) {
+      const node = parent.querySelector(selector)
+      return node.parentElement === parent ? node : null
+    }
+    const nodes = parent.querySelectorAll(selector)
+    if (!nodes || !nodes.length) {
+      return []
+    }
+    return [...nodes].filter(node =>
+      node.parentElement === parent
+    )
+  }
+
   const widgetParsers = {
     tabs: container => {
       let id = container.getAttribute('id')
-      let header = container.querySelector(':scope > [role=tablist]')
-      let tabHeaders = header.querySelectorAll('[data-card-id]')
+      let header = selectClosestChildren(container,'[role=tablist]', true)
+      let tabHeaders = selectClosestChildren(header,'.menu-item')
       const menuItems = [...tabHeaders].map(headerItem => {
         return {
           text: headerItem.textContent || headerItem.innerText,
           id: headerItem.getAttribute('data-card-id')
         }
       })
-      let panelsContainer = container.querySelector(':scope > [role=tabpanel].deck-cards')
-      let panels = [...panelsContainer.querySelectorAll(':scope > [role=tabpanel][data-macro-name=card]')]
+      let panelsContainer = selectClosestChildren(container,'[role=tabpanel].deck-cards', true)
+      let panels = [...selectClosestChildren(panelsContainer, '[role=tabpanel][data-macro-name=card]')]
         .map(panel => ({
           content: floatWidget(panel),
           id: panel.getAttribute('id')
@@ -80,8 +94,8 @@ const getStructure = (dom) => {
     },
     expander: container => {
       let id = container.getAttribute('id')
-      let control = container.querySelector(':scope > .expand-control')
-      let expandContainer = container.querySelector(':scope > .expand-content')
+      let control = selectClosestChildren(container,'.expand-control', true)
+      let expandContainer = selectClosestChildren(container, '.expand-content', true)
       return {
         type: 'expander',
         id,
@@ -97,9 +111,9 @@ const getStructure = (dom) => {
       }
     },
     informer: container => {
-      let icon = container.querySelector(':scope > .aui-icon')
+      let icon = selectClosestChildren(container, '.aui-icon', true)
         .getAttribute('class')
-      const toBody = container.querySelector(':scope > .confluence-information-macro-body')
+      const toBody = selectClosestChildren(container,'.confluence-information-macro-body', true)
       return {
         type: 'informer',
         icon,
@@ -117,7 +131,8 @@ const getStructure = (dom) => {
     }
   }
 
-  return floatWidget(startNode)
+  const result = floatWidget(startNode)
+  return result
 }
 
 module.exports = { getStructure }
